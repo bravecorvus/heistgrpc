@@ -182,3 +182,10 @@ message FrontEndGetElementReply {
         string sad = 8;
         string wow = 9;
 }
+
+
+/* NOTES ON USING WITH NODE.JS
+var grpc = require('grpc');
+var protoDescriptor = grpc.load(__dirname + '/route_guide.proto');
+// The protoDescriptor object has the full package hierarchy
+var example = protoDescriptor.examples; */
