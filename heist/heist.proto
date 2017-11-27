@@ -1,0 +1,184 @@
+syntax = "proto3";
+package heist;
+
+import "google/protobuf/empty.proto";
+
+/*
+### Microservices Definitions ###
+
+master
+    - bootstraps all initial subroutines (i.e. pull all Page id's from a specified JSON file, and add them to DB, scrape all the Pages for elements, and them to DB
+    - in memory structure of all data (basically used instead of REDIS)
+    - Uses cron to run heistalgorithm periodically
+
+scrape- 
+    - when requested, it uses FB Graph API to grab data for pages and elements and returns them to sender. (for pages, it will return be the most recent list of posted elements, for elements, it will be the reactions, shares, etc.)
+
+postasset-
+    - when requested, it will post a given facebook element on facebook like page
+
+heistalgorithm-
+    - when requested, it will get the progression data via the master--request--> and run the virality algorithm on that element. If it falls below failure threshold, then it instructs master to delete the element. Else, if the element passes the virality threshold, it will post the element on FB (via postasset) and then instruct master to delete the element.
+
+frontend-
+    - Vue.js + Node front end
+    - Public facing, allows admin to add new pages to list, or remove old ones, see meme graphing data etc.
+
+
+### Probable Calling Patterns ###
+bootstrap-
+    master --load to memory--> master --request--> scrape --reply--> master
+
+scrapepage-
+    master --request--> scrape --reply--> master
+
+scrapeelement-
+    master --request--> scrape --reply--> master
+
+
+*/
+
+service Heist {
+    rpc ScrapePage(PageScrapeRequest) returns (PageScrapeReply) {}
+    rpc ScrapeElement(ElementScrapeRequest) returns (ElementScrapeReply) {}
+    rpc PostElement(ElementPostRequest) returns (ElementPostReply) {}
+    rpc RunElementAlgorithms(AlgorithmsRequest) returns (AlgorithmsReply) {}
+    rpc FrontEndPostPages(FrontEndPostPagesRequest) returns (FrontEndPostPagesReply) {}
+    rpc FrontEndGetPages(google.protobuf.Empty) returns (FrontEndGetPagesReply) {}
+    rpc FrontEndPostElement(FrontEndPostElementRequest) returns (FrontEndPostElementReply) {}
+    rpc FrontEndGetElements(google.protobuf.Empty) returns (FrontEndGetElementsReply) {}
+    rpc FrontEndGetElement(FrontEndGetElementRequest) returns (FrontEndGetElementReply) {}
+}
+
+message PageScrapeRequest {
+    string id = 1;
+    string latestpost = 2;
+}
+
+message PageScrapeReply {
+    string id = 1;
+    bool status = 2;
+    string msg = 3;
+    message Element {
+        string id = 1;
+        string like = 2;
+        string love = 3;
+        string haha = 4;
+        string angry = 5;
+        string sad = 6;
+        string wow = 7;
+    }
+    repeated Element elements = 4;
+}
+
+message ElementScrapeRequest {
+    string id = 1;
+    string type = 2;
+}
+
+message ElementScrapeReply {
+    string id = 1;
+    bool status = 2;
+    string msg = 3;
+    string like = 4;
+    string love = 5;
+    string haha = 6;
+    string angry = 7;
+    string sad = 8;
+    string wow = 9;
+}
+
+message ElementPostRequest {
+    string id = 1;
+    string type = 2;
+}
+
+message ElementPostReply {
+    string id = 1;
+    bool status = 2;
+    string msg = 3;
+}
+
+message AlgorithmsRequest {
+    string id = 1;
+    message Element {
+        string id = 1;
+        string like = 2;
+        string love = 3;
+        string haha = 4;
+        string angry = 5;
+        string sad = 6;
+        string wow = 7;
+    }
+    repeated Element elements = 2;
+}
+
+message AlgorithmsReply {
+    string id = 1;
+    bool post = 2;
+    bool delete = 3;
+}
+
+message FrontEndPostPagesRequest {
+    /* addordelete- add = true, delete = false */
+    bool addordelete = 1;
+    /* idlink will either be a link to the page if the user wants to add it, or an id if they want to delete it. */
+    string idlink = 2;
+}
+
+message FrontEndPostPagesReply {
+    bool status = 1;
+    string msg = 2;
+}
+
+message FrontEndGetPagesReply {
+    message Page {
+        string name = 1;    
+        string id = 2;
+        int32 numheisted = 3;
+    }
+    bool status = 1;
+    string msg = 2;
+    repeated Page pages = 3;
+}
+
+message FrontEndPostElementRequest {
+    string id = 1; 
+    string operation = 2;
+}
+
+message FrontEndPostElementReply {
+    bool status = 1;
+    string msg = 2;
+}
+
+message FrontEndGetElementsReply {
+    message Element {
+        string id = 1;
+        string like = 2;
+        string love = 3;
+        string haha = 4;
+        string angry = 5;
+        string sad = 6;
+        string wow = 7;
+    }
+    bool status = 1;
+    string msg = 2;
+    repeated Element elements = 3;
+}
+
+message FrontEndGetElementRequest {
+    string id = 1;
+}
+
+message FrontEndGetElementReply {
+        string id = 1;
+        bool status = 2;
+        string msg = 3;
+        string like = 4;
+        string love = 5;
+        string haha = 6;
+        string angry = 7;
+        string sad = 8;
+        string wow = 9;
+}
